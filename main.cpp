@@ -17,39 +17,56 @@ auto main() -> int {
     }
 
     auto charSize = 20;
-//    auto lineNumber = 750 / 20;
-//    auto lines = std::vector<std::vector<std::string>>(lineNumber);
-//    for (auto& vec: lines) {
-//        vec.push_back("world");
-//    }
-//    for (auto i = 0; i < lines.size(); ++i) {
-//        lines[i].push_back("world" + i);
-//    }
+    auto lineNumber = 540 / (charSize + 30);
 
+    auto words = std::vector<std::string>{
+            "hello", "some", "different", "words", "in", "random", "order",
+            "my", "new", "coat", "world", "worlds", "good", "bad", "never", "say"
+    };
+
+    // auto linesNumber = 3;
     auto texts = std::vector<sf::Text>();
-    for (auto i = 0; i < 6; ++i) {
-//        for (auto item: lines[i]) {
+    for (auto word: words) {
         auto text = sf::Text();
         text.setFont(font);
-        text.setString(fmt::format("hello{}", i));
+        text.setString(word);
         text.setCharacterSize(charSize);
-        //https://stackoverflow.com/questions/7560114/random-number-c-in-some-range (range: [-20; 0] ---> (-20 + ( std::rand() % ( 0 + 20 + 1 ) ))
-        text.setPosition((-400 + (std::rand() % (0 + 400 + 1))), i * (charSize + 30));
+        //https://stackoverflow.com/questions/7560114/random-number-c-in-some-range
+        // x ---> random [-300; 0]
+        //i--> random : [0, linesNumber]
+        //low + ( std::rand() % ( high - low + 1 ) )
+
+
+        auto i = (1 + (std::rand() % lineNumber));
+        auto y = i * (charSize + 30);
+
+        auto x = 0;
+        if (!texts.empty()) {
+            for (auto item: texts) {
+                if (item.getPosition().y == y) {
+                    auto previousXPosition = item.getPosition().x;
+                    x = previousXPosition - text.getLocalBounds().width - 100;
+                }
+            }
+        } else {
+            x = -300 + (std::rand() % 301);
+        }
+
+        text.setPosition(x, y);
         text.setFillColor(sf::Color::Red);
         text.setStyle(sf::Text::Bold);
         texts.push_back(text);
-        //}
     }
 
-    auto label = sf::Text();
-    label.setFont(font);
-    label.setCharacterSize(24);
-    label.setString("Text you enter: ");
+    auto labelEntering = sf::Text();
+    labelEntering.setFont(font);
+    labelEntering.setCharacterSize(24);
+    labelEntering.setString("Text you enter: ");
     auto x = 10;
     auto y = 540;
-    label.setPosition(x, y);
-    label.setFillColor(sf::Color::Red);
-    label.setStyle(sf::Text::Bold | sf::Text::Underlined);
+    labelEntering.setPosition(x, y);
+    labelEntering.setFillColor(sf::Color::Red);
+    labelEntering.setStyle(sf::Text::Bold | sf::Text::Underlined);
 
 
     auto textEntered = sf::Text();
@@ -68,8 +85,24 @@ auto main() -> int {
     message.setFillColor(sf::Color::Red);
     message.setStyle(sf::Text::Bold);
 
+    auto labelCount = sf::Text();
+    labelCount.setFont(font);
+    labelCount.setCharacterSize(24);
+    labelCount.setString("Points: ");
+    labelCount.setPosition(630, 540);
+    labelCount.setFillColor(sf::Color::Red);
+    labelCount.setStyle(sf::Text::Bold | sf::Text::Underlined);
+
+    auto counterText = sf::Text();
+    counterText.setFont(font);
+    counterText.setCharacterSize(24);
+    counterText.setPosition(labelCount.getPosition().x + labelCount.getLocalBounds().width + 20, 540);
+    counterText.setFillColor(sf::Color::Red);
+    counterText.setStyle(sf::Text::Bold);
+
 
     auto s = std::string();
+    auto counter = 0;
     auto gameOver = false;
 
     while (window.isOpen()) {
@@ -107,7 +140,7 @@ auto main() -> int {
                 }
 
                 textEntered.setString(s);
-                text.move(0.01, 0);
+                text.move(0.03, 0);
 
                 if (s == text.getString()) {
                     text.setFillColor(sf::Color::White);
@@ -116,8 +149,11 @@ auto main() -> int {
                 window.draw(text);
             }
 
+            counterText.setString(std::to_string(counter));
             window.draw(textEntered);
-            window.draw(label);
+            window.draw(labelEntering);
+            window.draw(labelCount);
+            window.draw(counterText);
 
         } else {
             window.clear(sf::Color::White);
