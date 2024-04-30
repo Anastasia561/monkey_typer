@@ -1,6 +1,7 @@
 #include <fmt/core.h>
 #include <SFML/Graphics.hpp>
 #include <string>
+#include <vector>
 
 auto main() -> int {
     auto window = sf::RenderWindow(
@@ -15,27 +16,32 @@ auto main() -> int {
         fmt::println("{}", "Error while loading font");
     }
 
-    auto text = sf::Text();
+    auto charSize = 20;
+//    auto lineNumber = 750 / 20;
+//    auto lines = std::vector<std::vector<std::string>>(lineNumber);
+//    for (auto& vec: lines) {
+//        vec.push_back("world");
+//    }
+//    for (auto i = 0; i < lines.size(); ++i) {
+//        lines[i].push_back("world" + i);
+//    }
 
-    text.setFont(font);
-    text.setString("hello");
-    text.setCharacterSize(24);
-    text.setPosition(-70, 20);
-    text.setFillColor(sf::Color::Red);
-    text.setStyle(sf::Text::Bold);
-
-    auto text2 = sf::Text();
-
-    text2.setFont(font);
-    text2.setString("world");
-    text2.setCharacterSize(24);
-    text2.setPosition(-30, 60);
-    text2.setFillColor(sf::Color::Red);
-    text2.setStyle(sf::Text::Bold);
-
+    auto texts = std::vector<sf::Text>();
+    for (auto i = 0; i < 6; ++i) {
+//        for (auto item: lines[i]) {
+        auto text = sf::Text();
+        text.setFont(font);
+        text.setString(fmt::format("hello{}", i));
+        text.setCharacterSize(charSize);
+        //https://stackoverflow.com/questions/7560114/random-number-c-in-some-range (range: [-20; 0] ---> (-20 + ( std::rand() % ( 0 + 20 + 1 ) ))
+        text.setPosition((-400 + (std::rand() % (0 + 400 + 1))), i * (charSize + 30));
+        text.setFillColor(sf::Color::Red);
+        text.setStyle(sf::Text::Bold);
+        texts.push_back(text);
+        //}
+    }
 
     auto label = sf::Text();
-
     label.setFont(font);
     label.setCharacterSize(24);
     label.setString("Text you enter: ");
@@ -45,14 +51,14 @@ auto main() -> int {
     label.setFillColor(sf::Color::Red);
     label.setStyle(sf::Text::Bold | sf::Text::Underlined);
 
-    auto textEntered = sf::Text();
 
+    auto textEntered = sf::Text();
     textEntered.setFont(font);
     textEntered.setCharacterSize(24);
-
     textEntered.setPosition(200, y);
     textEntered.setFillColor(sf::Color::Red);
     textEntered.setStyle(sf::Text::Bold);
+
 
     auto message = sf::Text();
     message.setFont(font);
@@ -64,13 +70,16 @@ auto main() -> int {
 
 
     auto s = std::string();
+    auto gameOver = false;
+
     while (window.isOpen()) {
+
         for (auto event = sf::Event(); window.pollEvent(event);) {
             if (event.type == sf::Event::Closed) {
                 window.close();
             }
 
-            if (event.type == sf::Event::TextEntered && event.key.code != sf::Keyboard::Num1) {
+            if (event.type == sf::Event::TextEntered) {
                 if (static_cast<char>(event.text.unicode) != 015) {
                     s += static_cast<char>(event.text.unicode);
                 }
@@ -83,35 +92,37 @@ auto main() -> int {
             }
         }
 
-        if ((text.getLocalBounds().width + text.getPosition().x) > 800) {
+        if (!gameOver) {
             window.clear(sf::Color::White);
-            window.draw(message);
-            window.display();
-        } else {
-            if (text.getPosition().x > 300 && text.getFillColor() != sf::Color::White) {
-                text.setFillColor(sf::Color::Blue);
-            }
-            if (text2.getPosition().x > 300 && text.getFillColor() != sf::Color::White) {
-                text2.setFillColor(sf::Color::Blue);
+
+            for (auto &text: texts) {
+
+                if ((text.getLocalBounds().width + text.getPosition().x) > 800 &&
+                    text.getFillColor() != sf::Color::White) {
+                    gameOver = true;
+                }
+
+                if (text.getPosition().x > 600 && text.getFillColor() != sf::Color::White) {
+                    text.setFillColor(sf::Color::Blue);
+                }
+
+                textEntered.setString(s);
+                text.move(0.01, 0);
+
+                if (s == text.getString()) {
+                    text.setFillColor(sf::Color::White);
+                }
+
+                window.draw(text);
             }
 
-            textEntered.setString(s);
-            text.move(0.01, 0);
-            text2.move(0.01, 0);
-
-            if (s == text.getString()) {
-                text.setFillColor(sf::Color::White);
-            }
-            if (s == text2.getString()) {
-                text2.setFillColor(sf::Color::White);
-            }
-
-            window.clear(sf::Color::White);
-            window.draw(text);
-            window.draw(text2);
             window.draw(textEntered);
             window.draw(label);
-            window.display();
+
+        } else {
+            window.clear(sf::Color::White);
+            window.draw(message);
         }
+        window.display();
     }
 }
