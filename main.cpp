@@ -11,11 +11,6 @@ auto main() -> int {
             sf::ContextSettings(0, 0, 8)
     );
 
-    auto font = sf::Font();
-    if (!font.loadFromFile("OpenSans.ttf")) {
-        fmt::println("{}", "Error while loading font");
-    }
-
     auto charSize = 20;
     auto lineNumber = 540 / (charSize + 30);
 
@@ -24,11 +19,21 @@ auto main() -> int {
             "my", "new", "coat", "world", "worlds", "good", "bad", "never", "say"
     };
 
-    // auto linesNumber = 3;
+    auto fonts = std::vector<sf::Font>(5);
+    fonts[0].loadFromFile("OpenSans.ttf");
+    fonts[1].loadFromFile("Oswald.ttf");
+    fonts[2].loadFromFile("Pacifico.ttf");
+    fonts[3].loadFromFile("Tusj.ttf");
+    fonts[4].loadFromFile("Seasrn.ttf");
+
+
     auto texts = std::vector<sf::Text>();
     for (auto word: words) {
         auto text = sf::Text();
-        text.setFont(font);
+
+        auto number = std::rand() % 5;
+        text.setFont(fonts[number]);
+
         text.setString(word);
         text.setCharacterSize(charSize);
         //https://stackoverflow.com/questions/7560114/random-number-c-in-some-range
@@ -58,8 +63,11 @@ auto main() -> int {
         texts.push_back(text);
     }
 
+    auto labelFont = sf::Font();
+    labelFont.loadFromFile("OpenSans.ttf");
+
     auto labelEntering = sf::Text();
-    labelEntering.setFont(font);
+    labelEntering.setFont(labelFont);
     labelEntering.setCharacterSize(24);
     labelEntering.setString("Text you enter: ");
     auto x = 10;
@@ -70,7 +78,7 @@ auto main() -> int {
 
 
     auto textEntered = sf::Text();
-    textEntered.setFont(font);
+    textEntered.setFont(labelFont);
     textEntered.setCharacterSize(24);
     textEntered.setPosition(200, y);
     textEntered.setFillColor(sf::Color::Red);
@@ -78,7 +86,7 @@ auto main() -> int {
 
 
     auto message = sf::Text();
-    message.setFont(font);
+    message.setFont(labelFont);
     message.setCharacterSize(24);
     message.setString("Game over");
     message.setPosition(300, 300);
@@ -86,15 +94,15 @@ auto main() -> int {
     message.setStyle(sf::Text::Bold);
 
     auto labelCount = sf::Text();
-    labelCount.setFont(font);
+    labelCount.setFont(labelFont);
     labelCount.setCharacterSize(24);
-    labelCount.setString("Points: ");
+    labelCount.setString("Score: ");
     labelCount.setPosition(630, 540);
     labelCount.setFillColor(sf::Color::Red);
     labelCount.setStyle(sf::Text::Bold | sf::Text::Underlined);
 
     auto counterText = sf::Text();
-    counterText.setFont(font);
+    counterText.setFont(labelFont);
     counterText.setCharacterSize(24);
     counterText.setPosition(labelCount.getPosition().x + labelCount.getLocalBounds().width + 20, 540);
     counterText.setFillColor(sf::Color::Red);
@@ -145,7 +153,7 @@ auto main() -> int {
                 if (s == text.getString()) {
                     text.setFillColor(sf::Color::White);
                 }
-
+                //counter++;
                 window.draw(text);
             }
 
@@ -153,7 +161,7 @@ auto main() -> int {
             window.draw(textEntered);
             window.draw(labelEntering);
             window.draw(labelCount);
-            window.draw(counterText);
+            //window.draw(counterText);
 
         } else {
             window.clear(sf::Color::White);
@@ -162,3 +170,4 @@ auto main() -> int {
         window.display();
     }
 }
+
