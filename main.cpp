@@ -8,6 +8,16 @@ auto fontsCreator() -> std::vector<sf::Font>;
 
 auto generateXPosition(const std::vector<sf::Text> &texts, const sf::Text &text, int y) -> int;
 
+auto labelCreator(const sf::Font &font, int size, std::string text, int x, int y, sf::Color color) -> sf::Text;
+
+namespace color {
+    auto backgroundColor1 = sf::Color(228, 246, 248);
+    auto backgroundColor2 = sf::Color(0, 71, 100);
+    auto wordColorNormal = sf::Color(140, 210, 188);
+    auto wordColorDanger = sf::Color(255, 136, 73);
+    auto blockColor = sf::Color(135, 206, 250, 255);
+}
+
 auto main() -> int {
     auto window = sf::RenderWindow(
             sf::VideoMode(800, 600),
@@ -16,11 +26,10 @@ auto main() -> int {
             sf::ContextSettings(0, 0, 8)
     );
 
-    auto charSize = 20;
-    auto lineNumber = 540 / (charSize + 30);
-
+    auto lineNumber = 6;
     auto fonts = fontsCreator();
-
+    auto labelFont = sf::Font();
+    labelFont.loadFromFile("OpenSans.ttf");
     auto file = std::fstream("words.txt");
 
     auto texts = std::vector<sf::Text>();
@@ -29,78 +38,72 @@ auto main() -> int {
         auto number = std::rand() % 5;
         text.setFont(fonts[number]);
         text.setString(word);
+        auto charSize = 20 + (std::rand() % (40 - 20 + 1));
         text.setCharacterSize(charSize);
         //https://stackoverflow.com/questions/7560114/random-number-c-in-some-range
         //low + ( std::rand() % ( high - low + 1 ) )
 
+        auto lineSpace = (480 - (lineNumber * 40)) / lineNumber;
         auto randomLineNumber = (1 + (std::rand() % lineNumber));
-        auto y = randomLineNumber * (charSize + 30);
+        auto y = randomLineNumber * (40 + lineSpace);
         auto x = generateXPosition(texts, text, y);
 
         text.setPosition(x, y);
-        text.setFillColor(sf::Color::Red);
-        text.setStyle(sf::Text::Bold);
+        text.setFillColor(color::wordColorNormal);
         texts.push_back(text);
     }
 
-    auto labelFont = sf::Font();
-    labelFont.loadFromFile("OpenSans.ttf");
-
-    auto labelEntering = sf::Text();
-    labelEntering.setFont(labelFont);
-    labelEntering.setCharacterSize(24);
-    labelEntering.setString("Text you enter: ");
-    labelEntering.setPosition(10, 540);
-    labelEntering.setFillColor(sf::Color::Red);
-    labelEntering.setStyle(sf::Text::Bold | sf::Text::Underlined);
+    auto footer = sf::RectangleShape(sf::Vector2f(800, 60));
+    footer.setPosition(0, 540);
+    footer.setFillColor(color::blockColor);
 
 
-    auto textEntered = sf::Text();
-    textEntered.setFont(labelFont);
-    textEntered.setCharacterSize(24);
-    textEntered.setPosition(labelEntering.getPosition().x + labelEntering.getLocalBounds().width + 10, 540);
-    textEntered.setFillColor(sf::Color::Red);
-    textEntered.setStyle(sf::Text::Bold);
+    auto labelEntering = labelCreator(labelFont, 24, "Text you enter: ", 10, 560, sf::Color::Black);
 
 
-    auto message = sf::Text();
-    message.setFont(labelFont);
-    message.setCharacterSize(24);
-    message.setString("Game over");
-    message.setPosition(300, 300);
-    message.setFillColor(sf::Color::Red);
-    message.setStyle(sf::Text::Bold);
+    auto textEntered = labelCreator(labelFont, 24, "",
+                                    labelEntering.getPosition().x + labelEntering.getLocalBounds().width + 10, 560,
+                                    sf::Color::Black);
 
-    auto labelCount = sf::Text();
-    labelCount.setFont(labelFont);
-    labelCount.setCharacterSize(24);
-    labelCount.setString("Score: ");
-    labelCount.setPosition(530, 540);
-    labelCount.setFillColor(sf::Color::Red);
-    labelCount.setStyle(sf::Text::Bold | sf::Text::Underlined);
 
-    auto counterText = sf::Text();
-    counterText.setFont(labelFont);
-    counterText.setCharacterSize(24);
-    counterText.setPosition(labelCount.getPosition().x + labelCount.getLocalBounds().width + 20, 540);
-    counterText.setFillColor(sf::Color::Red);
-    counterText.setStyle(sf::Text::Bold);
+    auto endGameMessage = labelCreator(labelFont, 30, "GAME OVER", 300, 200, sf::Color::Black);
+    auto endGameBlock = sf::RectangleShape(sf::Vector2f(300, 60));
+    endGameBlock.setPosition(250, 190);
+    endGameBlock.setFillColor(color::blockColor);
 
-    auto startLabel = sf::Text();
-    startLabel.setFont(labelFont);
-    startLabel.setCharacterSize(24);
-    startLabel.setString("MENU\nto start game press '2'\nto open menu again press '1'\nto rise speed press '3'");
-    startLabel.setPosition(300, 300);
-    startLabel.setFillColor(sf::Color::Red);
-    startLabel.setStyle(sf::Text::Bold);
 
+    auto labelCount = labelCreator(labelFont, 24, "Score: ", 530, 560, sf::Color::Black);
+
+
+    auto counterText = labelCreator(labelFont, 24, "",
+                                    labelCount.getPosition().x + labelCount.getLocalBounds().width + 20, 560,
+                                    sf::Color::Black);
+
+
+    auto titleLabel = labelCreator(labelFont, 30, "MONKEY TYPER", 260, 35, sf::Color::Black);
+    auto menuLabel = labelCreator(labelFont, 24, "Menu", 350, 200, sf::Color::Black);
+    auto optionsLabel = labelCreator(labelFont, 20,
+                                     "show menu  -->  '1'\n\n"
+                                     "start game  -->  '2'\n\nrise speed  -->  'arrow up'\n\nlow speed  -->  'arrow down'",
+                                     250, 260, sf::Color::Black);
+
+    auto menuBlock = sf::RectangleShape(sf::Vector2f(600, 50));
+    menuBlock.setPosition(100, 30);
+    menuBlock.setFillColor(color::blockColor);
+
+    auto optionsFrame = sf::RectangleShape(sf::Vector2f(400, 300));
+    optionsFrame.setPosition(200, 180);
+    optionsFrame.setFillColor(sf::Color(0, 0, 0, 0));
+    optionsFrame.setOutlineThickness(5);
+    optionsFrame.setOutlineColor(sf::Color::Blue);
 
     auto s = std::string();
     auto counter = 0.0;
-    auto speed = 0.007;
+    auto speed = 0.05;
     auto gameOver = false;
     auto showMenu = true;
     auto riseSpeed = false;
+    auto lowSpeed = false;
 
 
     while (window.isOpen()) {
@@ -112,7 +115,7 @@ auto main() -> int {
 
             if (event.type == sf::Event::TextEntered) {
                 auto charEntered = static_cast<char>(event.text.unicode);
-                if (charEntered != 015 && charEntered != 061 && charEntered != 062 && charEntered != 063) {
+                if (charEntered != 015 && charEntered != 061 && charEntered != 062) {
                     s += charEntered;
                 }
             }
@@ -127,69 +130,79 @@ auto main() -> int {
                 if (event.key.code == sf::Keyboard::Num2) {
                     showMenu = false;
                 }
-                if (event.key.code == sf::Keyboard::Num3) {
+                if (event.key.code == sf::Keyboard::Up) {
                     riseSpeed = true;
                 }
+                if (event.key.code == sf::Keyboard::Down) {
+                    lowSpeed = true;
+                }
             }
-
         }
 
-        window.clear(sf::Color::White);
+        window.clear(color::backgroundColor1);
 
         if (showMenu) {
-            window.draw(startLabel);
+            window.draw(menuBlock);
+            window.draw(optionsFrame);
+            window.draw(titleLabel);
+            window.draw(menuLabel);
+            window.draw(optionsLabel);
         } else {
-            if (!gameOver) {
-                window.clear(sf::Color::White);
 
+            if (!gameOver) {
+                window.clear(color::backgroundColor2);
 
                 for (auto &text: texts) {
 
                     if ((text.getLocalBounds().width + text.getPosition().x) > 800 &&
-                        text.getFillColor() != sf::Color::White) {
+                        text.getFillColor() != color::backgroundColor2) {
                         gameOver = true;
                     }
 
-                    if (text.getPosition().x > 600 && text.getFillColor() != sf::Color::White) {
-                        text.setFillColor(sf::Color::Blue);
+                    if (text.getPosition().x > 600 && text.getFillColor() != color::backgroundColor2) {
+                        text.setFillColor(color::wordColorDanger);
                     }
-
-                    textEntered.setString(s);
 
                     if (riseSpeed) {
                         speed *= 2;
-                        text.move(speed, 0);
                         riseSpeed = false;
                     }
+                    if (lowSpeed) {
+                        speed /= 2;
+                        lowSpeed = false;
+                    }
+
+                    textEntered.setString(s);
                     text.move(speed, 0);
 
                     if (s == text.getString()) {
-                        text.setFillColor(sf::Color::White);
+                        text.setFillColor(color::backgroundColor2);
                     }
 
                     window.draw(text);
                 }
 
-                counter += 0.001;
+                counter += 0.008;
                 counterText.setString(std::to_string(static_cast<int>(counter)));
 
+                window.draw(footer);
                 window.draw(textEntered);
                 window.draw(labelEntering);
                 window.draw(labelCount);
                 window.draw(counterText);
 
             } else {
-                window.clear(sf::Color::White);
-                window.draw(message);
-                labelCount.setPosition(300, 400);
-                counterText.setPosition(400, 400);
+                window.clear(color::backgroundColor1);
+                window.draw(endGameBlock);
+                window.draw(endGameMessage);
+                labelCount.setPosition(330, 300);
+                counterText.setPosition(430, 300);
                 window.draw(counterText);
                 window.draw(labelCount);
             }
         }
         window.display();
     }
-
 }
 
 auto fontsCreator() -> std::vector<sf::Font> {
@@ -197,7 +210,7 @@ auto fontsCreator() -> std::vector<sf::Font> {
     fonts[0].loadFromFile("OpenSans.ttf");
     fonts[1].loadFromFile("Oswald.ttf");
     fonts[2].loadFromFile("Pacifico.ttf");
-    fonts[3].loadFromFile("Tusj.ttf");
+    fonts[3].loadFromFile("Amatic.ttf");
     fonts[4].loadFromFile("Seasrn.ttf");
     return fonts;
 }
@@ -213,9 +226,18 @@ auto generateXPosition(const std::vector<sf::Text> &texts, const sf::Text &text,
             }
         }
     } else {
-        x = -300 + (std::rand() % 301);
+        x = -200 + (std::rand() % 201);
     }
     return x;
 }
 
-
+auto labelCreator(const sf::Font &font, int size, std::string text, int x, int y, sf::Color color) -> sf::Text {
+    auto label = sf::Text();
+    label.setFont(font);
+    label.setCharacterSize(size);
+    label.setString(text);
+    label.setPosition(x, y);
+    label.setFillColor(color);
+    label.setStyle(sf::Text::Bold);
+    return label;
+}
