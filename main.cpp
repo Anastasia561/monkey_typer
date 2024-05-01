@@ -2,6 +2,11 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <vector>
+#include <fstream>
+
+auto fontsCreator() -> std::vector<sf::Font>;
+
+auto generateXPosition(const std::vector<sf::Text> &texts, const sf::Text &text, int y) -> int;
 
 auto main() -> int {
     auto window = sf::RenderWindow(
@@ -14,48 +19,23 @@ auto main() -> int {
     auto charSize = 20;
     auto lineNumber = 540 / (charSize + 30);
 
-    auto words = std::vector<std::string>{
-            "hello", "some", "different", "words", "in", "random", "order",
-            "my", "new", "coat", "world", "worlds", "good", "bad", "never", "say"
-    };
+    auto fonts = fontsCreator();
 
-    auto fonts = std::vector<sf::Font>(5);
-    fonts[0].loadFromFile("OpenSans.ttf");
-    fonts[1].loadFromFile("Oswald.ttf");
-    fonts[2].loadFromFile("Pacifico.ttf");
-    fonts[3].loadFromFile("Tusj.ttf");
-    fonts[4].loadFromFile("Seasrn.ttf");
-
+    auto file = std::fstream("words.txt");
 
     auto texts = std::vector<sf::Text>();
-    for (auto word: words) {
+    for (auto word = std::string(); file >> word;) {
         auto text = sf::Text();
-
         auto number = std::rand() % 5;
         text.setFont(fonts[number]);
-
         text.setString(word);
         text.setCharacterSize(charSize);
         //https://stackoverflow.com/questions/7560114/random-number-c-in-some-range
-        // x ---> random [-300; 0]
-        //i--> random : [0, linesNumber]
         //low + ( std::rand() % ( high - low + 1 ) )
 
-
-        auto i = (1 + (std::rand() % lineNumber));
-        auto y = i * (charSize + 30);
-
-        auto x = 0;
-        if (!texts.empty()) {
-            for (auto item: texts) {
-                if (item.getPosition().y == y) {
-                    auto previousXPosition = item.getPosition().x;
-                    x = previousXPosition - text.getLocalBounds().width - 100;
-                }
-            }
-        } else {
-            x = -300 + (std::rand() % 301);
-        }
+        auto randomLineNumber = (1 + (std::rand() % lineNumber));
+        auto y = randomLineNumber * (charSize + 30);
+        auto x = generateXPosition(texts, text, y);
 
         text.setPosition(x, y);
         text.setFillColor(sf::Color::Red);
@@ -70,9 +50,7 @@ auto main() -> int {
     labelEntering.setFont(labelFont);
     labelEntering.setCharacterSize(24);
     labelEntering.setString("Text you enter: ");
-    auto x = 10;
-    auto y = 540;
-    labelEntering.setPosition(x, y);
+    labelEntering.setPosition(10, 540);
     labelEntering.setFillColor(sf::Color::Red);
     labelEntering.setStyle(sf::Text::Bold | sf::Text::Underlined);
 
@@ -80,7 +58,7 @@ auto main() -> int {
     auto textEntered = sf::Text();
     textEntered.setFont(labelFont);
     textEntered.setCharacterSize(24);
-    textEntered.setPosition(200, y);
+    textEntered.setPosition(labelEntering.getPosition().x + labelEntering.getLocalBounds().width + 10, 540);
     textEntered.setFillColor(sf::Color::Red);
     textEntered.setStyle(sf::Text::Bold);
 
@@ -97,7 +75,7 @@ auto main() -> int {
     labelCount.setFont(labelFont);
     labelCount.setCharacterSize(24);
     labelCount.setString("Score: ");
-    labelCount.setPosition(630, 540);
+    labelCount.setPosition(530, 540);
     labelCount.setFillColor(sf::Color::Red);
     labelCount.setStyle(sf::Text::Bold | sf::Text::Underlined);
 
@@ -108,10 +86,22 @@ auto main() -> int {
     counterText.setFillColor(sf::Color::Red);
     counterText.setStyle(sf::Text::Bold);
 
+    auto startLabel = sf::Text();
+    startLabel.setFont(labelFont);
+    startLabel.setCharacterSize(24);
+    startLabel.setString("MENU\nto start game press '2'\nto open menu again press '1'\nto rise speed press '3'");
+    startLabel.setPosition(300, 300);
+    startLabel.setFillColor(sf::Color::Red);
+    startLabel.setStyle(sf::Text::Bold);
+
 
     auto s = std::string();
-    auto counter = 0;
+    auto counter = 0.0;
+    auto speed = 0.007;
     auto gameOver = false;
+    auto showMenu = true;
+    auto riseSpeed = false;
+
 
     while (window.isOpen()) {
 
@@ -121,8 +111,9 @@ auto main() -> int {
             }
 
             if (event.type == sf::Event::TextEntered) {
-                if (static_cast<char>(event.text.unicode) != 015) {
-                    s += static_cast<char>(event.text.unicode);
+                auto charEntered = static_cast<char>(event.text.unicode);
+                if (charEntered != 015 && charEntered != 061 && charEntered != 062 && charEntered != 063) {
+                    s += charEntered;
                 }
             }
 
@@ -130,44 +121,101 @@ auto main() -> int {
                 if (event.key.code == sf::Keyboard::Enter) {
                     s = std::string();
                 }
+                if (event.key.code == sf::Keyboard::Num1) {
+                    showMenu = true;
+                }
+                if (event.key.code == sf::Keyboard::Num2) {
+                    showMenu = false;
+                }
+                if (event.key.code == sf::Keyboard::Num3) {
+                    riseSpeed = true;
+                }
             }
+
         }
 
-        if (!gameOver) {
-            window.clear(sf::Color::White);
+        window.clear(sf::Color::White);
 
-            for (auto &text: texts) {
-
-                if ((text.getLocalBounds().width + text.getPosition().x) > 800 &&
-                    text.getFillColor() != sf::Color::White) {
-                    gameOver = true;
-                }
-
-                if (text.getPosition().x > 600 && text.getFillColor() != sf::Color::White) {
-                    text.setFillColor(sf::Color::Blue);
-                }
-
-                textEntered.setString(s);
-                text.move(0.03, 0);
-
-                if (s == text.getString()) {
-                    text.setFillColor(sf::Color::White);
-                }
-                //counter++;
-                window.draw(text);
-            }
-
-            counterText.setString(std::to_string(counter));
-            window.draw(textEntered);
-            window.draw(labelEntering);
-            window.draw(labelCount);
-            //window.draw(counterText);
-
+        if (showMenu) {
+            window.draw(startLabel);
         } else {
-            window.clear(sf::Color::White);
-            window.draw(message);
+            if (!gameOver) {
+                window.clear(sf::Color::White);
+
+
+                for (auto &text: texts) {
+
+                    if ((text.getLocalBounds().width + text.getPosition().x) > 800 &&
+                        text.getFillColor() != sf::Color::White) {
+                        gameOver = true;
+                    }
+
+                    if (text.getPosition().x > 600 && text.getFillColor() != sf::Color::White) {
+                        text.setFillColor(sf::Color::Blue);
+                    }
+
+                    textEntered.setString(s);
+
+                    if (riseSpeed) {
+                        speed *= 2;
+                        text.move(speed, 0);
+                        riseSpeed = false;
+                    }
+                    text.move(speed, 0);
+
+                    if (s == text.getString()) {
+                        text.setFillColor(sf::Color::White);
+                    }
+
+                    window.draw(text);
+                }
+
+                counter += 0.001;
+                counterText.setString(std::to_string(static_cast<int>(counter)));
+
+                window.draw(textEntered);
+                window.draw(labelEntering);
+                window.draw(labelCount);
+                window.draw(counterText);
+
+            } else {
+                window.clear(sf::Color::White);
+                window.draw(message);
+                labelCount.setPosition(300, 400);
+                counterText.setPosition(400, 400);
+                window.draw(counterText);
+                window.draw(labelCount);
+            }
         }
         window.display();
     }
+
 }
+
+auto fontsCreator() -> std::vector<sf::Font> {
+    auto fonts = std::vector<sf::Font>(5);
+    fonts[0].loadFromFile("OpenSans.ttf");
+    fonts[1].loadFromFile("Oswald.ttf");
+    fonts[2].loadFromFile("Pacifico.ttf");
+    fonts[3].loadFromFile("Tusj.ttf");
+    fonts[4].loadFromFile("Seasrn.ttf");
+    return fonts;
+}
+
+auto generateXPosition(const std::vector<sf::Text> &texts, const sf::Text &text, int y) -> int {
+    auto x = 0;
+    auto space = (100 + (std::rand() % 301));
+    if (!texts.empty()) {
+        for (const auto &item: texts) {
+            if (item.getPosition().y == y) {
+                auto previousXPosition = item.getPosition().x;
+                x = previousXPosition - text.getLocalBounds().width - space;
+            }
+        }
+    } else {
+        x = -300 + (std::rand() % 301);
+    }
+    return x;
+}
+
 
