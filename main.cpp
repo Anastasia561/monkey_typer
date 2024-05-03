@@ -2,31 +2,15 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <vector>
-#include <algorithm>
 #include <set>
-#include <fstream>
 
-auto fontsCreator() -> std::vector<sf::Font>;
+#include "creator.h"
+#include "colors.h"
+#include "fileProcessor.h"
 
 auto generateXPosition(const std::vector<sf::Text> &texts, const sf::Text &text, int y) -> int;
 
-auto labelCreator(const sf::Font &font, int size, std::string text, int x, int y, sf::Color color) -> sf::Text;
-
-auto wordsCreator(std::vector<sf::Font> &fonts, int lineNumber, std::string fileName) -> std::vector<sf::Text>;
-
 auto updateBestScores(std::set<int> &bestScores, int currentScore) -> void;
-
-auto safeToFile(const std::set<int> &bestScores, std::string fileName) -> void;
-
-auto readFromFile(std::set<int> &bestScores, std::string fileName) -> void;
-
-namespace color {
-    auto backgroundColor1 = sf::Color(228, 246, 248);
-    auto backgroundColor2 = sf::Color(0, 71, 100);
-    auto wordColorNormal = sf::Color(140, 210, 188);
-    auto wordColorDanger = sf::Color(255, 136, 73);
-    auto blockColor = sf::Color(135, 206, 250, 255);
-}
 
 auto main() -> int {
     auto window = sf::RenderWindow(
@@ -43,9 +27,7 @@ auto main() -> int {
 
     auto texts = wordsCreator(fonts, lineNumber, "words.txt");
 
-    auto footer = sf::RectangleShape(sf::Vector2f(800, 60));
-    footer.setPosition(0, 540);
-    footer.setFillColor(color::blockColor);
+    auto footer = blockCreator(800, 60, 0, 540);
 
 
     auto labelEntering = labelCreator(labelFont,
@@ -60,9 +42,8 @@ auto main() -> int {
 
     auto endGameMessage = labelCreator(labelFont, 30, "GAME OVER",
                                        300, 100, sf::Color::Black);
-    auto endGameBlock = sf::RectangleShape(sf::Vector2f(300, 60));
-    endGameBlock.setPosition(250, 90);
-    endGameBlock.setFillColor(color::blockColor);
+
+    auto endGameBlock = blockCreator(300, 60, 250, 90);
 
 
     auto labelCount = labelCreator(labelFont, 24, "Score: ",
@@ -76,8 +57,12 @@ auto main() -> int {
 
     auto titleLabel = labelCreator(labelFont, 30, "MONKEY TYPER",
                                    260, 35, sf::Color::Black);
+
     auto menuLabel = labelCreator(labelFont, 24, "Menu",
                                   350, 200, sf::Color::Black);
+
+    auto menuBlock = blockCreator(600, 50, 100, 30);
+
     auto optionsLabel = labelCreator(labelFont, 20,
                                      "show menu  -->  '1'\n\n"
                                      "start game  -->  '2'\n\nrise speed  -->  'arrow up'\n\n"
@@ -85,23 +70,12 @@ auto main() -> int {
                                      250, 260, sf::Color::Black);
 
     auto bestScoresLabel = labelCreator(labelFont, 24, "Best scores", 320, 300, sf::Color::Black);
+
     auto bestScoresOptions = labelCreator(labelFont, 20, "", 380, 350, sf::Color::Black);
 
-    auto menuBlock = sf::RectangleShape(sf::Vector2f(600, 50));
-    menuBlock.setPosition(100, 30);
-    menuBlock.setFillColor(color::blockColor);
+    auto optionsFrame = frameCreator(400, 300, 200, 180);
 
-    auto optionsFrame = sf::RectangleShape(sf::Vector2f(400, 300));
-    optionsFrame.setPosition(200, 180);
-    optionsFrame.setFillColor(sf::Color(0, 0, 0, 0));
-    optionsFrame.setOutlineThickness(5);
-    optionsFrame.setOutlineColor(sf::Color::Blue);
-
-    auto bestScoresFrame = sf::RectangleShape(sf::Vector2f(200, 210));
-    bestScoresFrame.setPosition(290, 290);
-    bestScoresFrame.setFillColor(sf::Color(0, 0, 0, 0));
-    bestScoresFrame.setOutlineThickness(5);
-    bestScoresFrame.setOutlineColor(sf::Color::Blue);
+    auto bestScoresFrame = frameCreator(200, 210, 290, 290);
 
     auto bestScores = std::set<int>();
     readFromFile(bestScores, "bestScores.txt");
@@ -123,7 +97,7 @@ auto main() -> int {
 
             if (event.type == sf::Event::TextEntered) {
                 auto charEntered = static_cast<char>(event.text.unicode);
-                if (charEntered != 015 && charEntered != 061 && charEntered != 062) {
+                if (charEntered != 015 && charEntered != 061 && charEntered != 062 && charEntered != 010) {
                     s += charEntered;
                 }
             }
@@ -143,6 +117,9 @@ auto main() -> int {
                 }
                 if (event.key.code == sf::Keyboard::Down) {
                     lowSpeed = true;
+                }
+                if (event.key.code == sf::Keyboard::BackSpace) {
+                    s.erase(s.size() - 1);
                 }
             }
         }
@@ -226,68 +203,6 @@ auto main() -> int {
     safeToFile(bestScores, "bestScores.txt");
 }
 
-auto fontsCreator() -> std::vector<sf::Font> {
-    auto fonts = std::vector<sf::Font>(5);
-    fonts[0].loadFromFile("OpenSans.ttf");
-    fonts[1].loadFromFile("Oswald.ttf");
-    fonts[2].loadFromFile("Pacifico.ttf");
-    fonts[3].loadFromFile("Amatic.ttf");
-    fonts[4].loadFromFile("Seasrn.ttf");
-    return fonts;
-}
-
-auto generateXPosition(const std::vector<sf::Text> &texts, const sf::Text &text, int y) -> int {
-    auto x = 0;
-    auto space = (100 + (std::rand() % 301));
-    if (!texts.empty()) {
-        for (const auto &item: texts) {
-            if (item.getPosition().y == y) {
-                auto previousXPosition = item.getPosition().x;
-                x = previousXPosition - text.getLocalBounds().width - space;
-            }
-        }
-    } else {
-        x = -200 + (std::rand() % 201);
-    }
-    return x;
-}
-
-auto labelCreator(const sf::Font &font, int size, std::string text, int x, int y, sf::Color color) -> sf::Text {
-    auto label = sf::Text();
-    label.setFont(font);
-    label.setCharacterSize(size);
-    label.setString(text);
-    label.setPosition(x, y);
-    label.setFillColor(color);
-    label.setStyle(sf::Text::Bold);
-    return label;
-}
-
-auto wordsCreator(std::vector<sf::Font> &fonts, int lineNumber, std::string fileName) -> std::vector<sf::Text> {
-    auto texts = std::vector<sf::Text>();
-    auto file = std::fstream(fileName);
-    for (auto word = std::string(); file >> word;) {
-        auto text = sf::Text();
-        auto number = std::rand() % 5;
-        text.setFont(fonts[number]);
-        text.setString(word);
-        auto charSize = 20 + (std::rand() % (40 - 20 + 1));
-        text.setCharacterSize(charSize);
-        //https://stackoverflow.com/questions/7560114/random-number-c-in-some-range
-        //low + ( std::rand() % ( high - low + 1 ) )
-
-        auto lineSpace = (480 - (lineNumber * 40)) / lineNumber;
-        auto randomLineNumber = (1 + (std::rand() % lineNumber));
-        auto y = randomLineNumber * (40 + lineSpace);
-        auto x = generateXPosition(texts, text, y);
-
-        text.setPosition(x, y);
-        text.setFillColor(color::wordColorNormal);
-        texts.push_back(text);
-    }
-    return texts;
-}
-
 auto updateBestScores(std::set<int> &bestScores, int currentScore) -> void {
     if (bestScores.size() < 3) {
         bestScores.insert(currentScore);
@@ -298,19 +213,5 @@ auto updateBestScores(std::set<int> &bestScores, int currentScore) -> void {
                 bestScores.insert(currentScore);
             }
         }
-    }
-}
-
-auto safeToFile(const std::set<int> &bestScores, std::string fileName) -> void {
-    auto file = std::fstream(fileName, std::ios::out | std::ios::trunc);
-    for (auto score: bestScores) {
-        file << score << " ";
-    }
-}
-
-auto readFromFile(std::set<int> &bestScores, std::string fileName) -> void {
-    auto file = std::fstream(fileName);
-    for (auto score = std::string(); file >> score;) {
-        bestScores.insert(std::stoi(score));
     }
 }
