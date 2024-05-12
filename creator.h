@@ -8,7 +8,7 @@ auto labelCreator(const sf::Font &font, int size, const std::string &text, int x
 auto fontsCreator() -> std::vector<sf::Font>;
 
 auto
-wordsCreator(const std::vector<sf::Font> &fonts, int lineNumber, const std::string &fileName) -> std::vector<sf::Text>;
+wordsCreator(const std::vector<sf::Font> &fonts, int lineNumber, const std::string &fileName, int charSize) -> std::vector<sf::Text>;
 
 auto frameCreator(const int &width, const int &height, const int &x, const int &y) -> sf::RectangleShape;
 

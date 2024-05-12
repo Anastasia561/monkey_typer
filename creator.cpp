@@ -40,7 +40,7 @@ auto generateXPosition(const std::vector<sf::Text> &texts, const sf::Text &text,
 }
 
 auto
-wordsCreator(const std::vector<sf::Font> &fonts, int lineNumber, const std::string &fileName) -> std::vector<sf::Text> {
+wordsCreator(const std::vector<sf::Font> &fonts, int lineNumber, const std::string &fileName, int charSize) -> std::vector<sf::Text> {
     auto texts = std::vector<sf::Text>();
     auto file = std::fstream(fileName);
     for (auto word = std::string(); file >> word;) {
@@ -48,7 +48,6 @@ wordsCreator(const std::vector<sf::Font> &fonts, int lineNumber, const std::stri
         auto number = std::rand() % 5;
         text.setFont(fonts[number]);
         text.setString(word);
-        auto charSize = 20 + (std::rand() % (40 - 20 + 1));
         text.setCharacterSize(charSize);
         //https://stackoverflow.com/questions/7560114/random-number-c-in-some-range
         //low + ( std::rand() % ( high - low + 1 ) )
