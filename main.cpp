@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <vector>
 #include <set>
+#include <chrono>
 
 #include "creator.h"
 #include "colors.h"
@@ -95,14 +96,17 @@ auto main() -> int {
     auto bestScores = std::set<int>();
     readFromFile(bestScores, "bestScores.txt");
 
-    auto s = std::string();
-    auto f = std::string();
+    auto stringEntered = std::string();
+    auto charSizeEntered = std::string();
     auto counter = 0.0;
-    auto speed = 0.05;
+    auto speed = 128;
     auto gameOver = false;
     auto riseSpeed = false;
     auto lowSpeed = false;
 
+    constexpr auto tickRate = 128;
+    using TickrateInterval = std::chrono::duration<double, std::ratio<1, tickRate>>;
+    auto interval = TickrateInterval(1);
 
     while (startWindow.isOpen()) {
         for (auto event = sf::Event(); startWindow.pollEvent(event);) {
@@ -112,7 +116,7 @@ auto main() -> int {
             if (event.type == sf::Event::TextEntered) {
                 auto charEntered = static_cast<char>(event.text.unicode);
                 if (charEntered != 015 && charEntered != 010) {
-                    f += charEntered;
+                    charSizeEntered += charEntered;
                 }
             }
             if (event.type == sf::Event::MouseButtonPressed
@@ -122,14 +126,14 @@ auto main() -> int {
             }
             if (event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::BackSpace) {
-                    f.erase(f.size() - 1);
+                    charSizeEntered.erase(charSizeEntered.size() - 1);
                 }
             }
         }
-
         startWindow.clear(color::backgroundColor1);
 
-        fontSizeText.setString(f);
+        fontSizeText.setString(charSizeEntered);
+
         startWindow.draw(fontSizeText);
         startWindow.draw(fontSizeLabel);
 
@@ -146,8 +150,8 @@ auto main() -> int {
     }
 
     auto charSize = 25;
-    if (!f.empty()) {
-        charSize = std::stoi(f);
+    if (!charSizeEntered.empty()) {
+        charSize = std::stoi(charSizeEntered);
     }
     auto texts = wordsCreator(fonts, lineNumber, "words.txt", charSize);
 
@@ -155,14 +159,16 @@ auto main() -> int {
 
         auto window = sf::RenderWindow(
                 sf::VideoMode(800, 600),
-                "game",
+                "Game",
                 sf::Style::Default,
                 sf::ContextSettings(0, 0, 8)
         );
 
+        auto lastUpdate = std::chrono::steady_clock::now();
         while (window.isOpen()) {
 
             for (auto event = sf::Event(); window.pollEvent(event);) {
+
                 if (event.type == sf::Event::Closed) {
                     window.close();
                 }
@@ -170,15 +176,14 @@ auto main() -> int {
                 if (event.type == sf::Event::TextEntered) {
                     auto charEntered = static_cast<char>(event.text.unicode);
                     if (charEntered != 015 && charEntered != 010) {
-                        s += charEntered;
+                        stringEntered += charEntered;
                     }
                 }
 
                 if (event.type == sf::Event::KeyPressed) {
                     if (event.key.code == sf::Keyboard::Enter) {
-                        s = std::string();
+                        stringEntered = std::string();
                     }
-
                     if (event.key.code == sf::Keyboard::Up) {
                         riseSpeed = true;
                     }
@@ -186,82 +191,88 @@ auto main() -> int {
                         lowSpeed = true;
                     }
                     if (event.key.code == sf::Keyboard::BackSpace) {
-                        s.erase(s.size() - 1);
+                        stringEntered.erase(stringEntered.size() - 1);
                     }
                 }
             }
 
+            auto now = std::chrono::steady_clock::now();
+            if (now - lastUpdate >= interval) {
 
-            if (!gameOver) {
-                window.clear(color::backgroundColor2);
+                if (!gameOver) {
+                    window.clear(color::backgroundColor2);
 
-                for (auto &text: texts) {
+                    for (auto &text: texts) {
 
-                    if ((text.getLocalBounds().width + text.getPosition().x) > 800 &&
-                        text.getFillColor() != color::backgroundColor2) {
+                        if ((text.getLocalBounds().width + text.getPosition().x) > 800 &&
+                            text.getFillColor() != color::backgroundColor2) {
+                            gameOver = true;
+                        }
+
+                        if (text.getPosition().x > 600 && text.getFillColor() != color::backgroundColor2) {
+                            text.setFillColor(color::wordColorDanger);
+                        }
+
+                        if (riseSpeed) {
+                            speed += 20;
+                            riseSpeed = false;
+                        }
+
+                        if (lowSpeed) {
+                            speed -= 20;
+                            lowSpeed = false;
+                        }
+
+                        textEntered.setString(stringEntered);
+                        text.move(speed / tickRate, 0);
+
+                        if (stringEntered == text.getString()) {
+                            text.setFillColor(color::backgroundColor2);
+                        }
+
+                        window.draw(text);
+                    }
+
+                    if (findLastWord(texts).getFillColor() == color::backgroundColor2) {
                         gameOver = true;
                     }
 
-                    if (text.getPosition().x > 600 && text.getFillColor() != color::backgroundColor2) {
-                        text.setFillColor(color::wordColorDanger);
+                    counter += 0.01;
+                    counterText.setString(std::to_string(static_cast<int>(counter)));
+
+                    window.draw(footer);
+                    window.draw(textEntered);
+                    window.draw(labelEntering);
+                    window.draw(labelCount);
+                    window.draw(counterText);
+
+                } else {
+                    window.clear(color::backgroundColor1);
+                    window.draw(endGameBlock);
+                    window.draw(endGameMessage);
+                    labelCount.setPosition(330, 200);
+                    counterText.setPosition(430, 200);
+
+                    updateBestScores(bestScores, static_cast<int>(counter));
+
+                    auto bestScoresOptionsString = std::string();
+                    for (auto score: bestScores) {
+                        bestScoresOptionsString += std::to_string(score) + "\n\n";
                     }
 
-                    if (riseSpeed) {
-                        speed *= 2;
-                        riseSpeed = false;
-                    }
-                    if (lowSpeed) {
-                        speed /= 2;
-                        lowSpeed = false;
-                    }
-
-                    textEntered.setString(s);
-                    text.move(speed, 0);
-
-                    if (s == text.getString()) {
-                        text.setFillColor(color::backgroundColor2);
-                    }
-
-                    window.draw(text);
+                    bestScoresOptions.setString(bestScoresOptionsString);
+                    window.draw(bestScoresLabel);
+                    window.draw(bestScoresOptions);
+                    window.draw(counterText);
+                    window.draw(labelCount);
+                    window.draw(bestScoresFrame);
                 }
-
-                if (findLastWord(texts).getFillColor() == color::backgroundColor2) {
-                    gameOver = true;
-                }
-
-                counter += 0.008;
-                counterText.setString(std::to_string(static_cast<int>(counter)));
-
-                window.draw(footer);
-                window.draw(textEntered);
-                window.draw(labelEntering);
-                window.draw(labelCount);
-                window.draw(counterText);
-
-            } else {
-                window.clear(color::backgroundColor1);
-                window.draw(endGameBlock);
-                window.draw(endGameMessage);
-                labelCount.setPosition(330, 200);
-                counterText.setPosition(430, 200);
-
-                updateBestScores(bestScores, static_cast<int>(counter));
-
-                auto bestScoresOptionsString = std::string();
-                for (auto score: bestScores) {
-                    bestScoresOptionsString += std::to_string(score) + "\n\n";
-                }
-
-                bestScoresOptions.setString(bestScoresOptionsString);
-                window.draw(bestScoresLabel);
-                window.draw(bestScoresOptions);
-                window.draw(counterText);
-                window.draw(labelCount);
-                window.draw(bestScoresFrame);
+                lastUpdate = now;
             }
             window.display();
         }
     }
+
     safeToFile(bestScores, "bestScores.txt");
 }
 

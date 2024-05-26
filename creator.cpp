@@ -40,7 +40,8 @@ auto generateXPosition(const std::vector<sf::Text> &texts, const sf::Text &text,
 }
 
 auto
-wordsCreator(const std::vector<sf::Font> &fonts, int lineNumber, const std::string &fileName, int charSize) -> std::vector<sf::Text> {
+wordsCreator(const std::vector<sf::Font> &fonts, int lineNumber, const std::string &fileName,
+             int charSize) -> std::vector<sf::Text> {
     auto texts = std::vector<sf::Text>();
     auto file = std::fstream(fileName);
     for (auto word = std::string(); file >> word;) {
