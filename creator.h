@@ -1,5 +1,6 @@
 #pragma once
 
+#include "complexText.h"
 #include <SFML/Graphics.hpp>
 
 auto labelCreator(const sf::Font &font, int size, const std::string &text, int x, int y,
@@ -9,7 +10,7 @@ auto fontsCreator() -> std::vector<sf::Font>;
 
 auto
 wordsCreator(const std::vector<sf::Font> &fonts, int lineNumber, const std::string &fileName,
-             int charSize) -> std::vector<sf::Text>;
+             int charSize) -> std::vector<ComplexText>;
 
 auto frameCreator(const int &width, const int &height, const int &x, const int &y) -> sf::RectangleShape;
 

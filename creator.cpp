@@ -1,5 +1,7 @@
+#include "complexText.h"
 #include <SFML/Graphics.hpp>
 #include <fstream>
+#include <memory>
 
 auto labelCreator(const sf::Font &font, int size, const std::string &text, int x, int y,
                   const sf::Color &color) -> sf::Text {
@@ -23,14 +25,14 @@ auto fontsCreator() -> std::vector<sf::Font> {
     return fonts;
 }
 
-auto generateXPosition(const std::vector<sf::Text> &texts, const sf::Text &text, int y) -> int {
+auto generateXPosition(const std::vector<ComplexText> &texts, const ComplexText &text, int y) -> int {
     auto x = 0;
     auto space = (100 + (std::rand() % 301));
     if (!texts.empty()) {
         for (const auto &item: texts) {
-            if (item.getPosition().y == y) {
-                auto previousXPosition = item.getPosition().x;
-                x = previousXPosition - text.getLocalBounds().width - space;
+            if (item.getPositionY() == y) {
+                auto previousXPosition = item.getPositionX();
+                x = previousXPosition - text.getLocalBoundsWidth() - space;
             }
         }
     } else {
@@ -41,15 +43,15 @@ auto generateXPosition(const std::vector<sf::Text> &texts, const sf::Text &text,
 
 auto
 wordsCreator(const std::vector<sf::Font> &fonts, int lineNumber, const std::string &fileName,
-             int charSize) -> std::vector<sf::Text> {
-    auto texts = std::vector<sf::Text>();
+             int charSize) -> std::vector<ComplexText> {
+    auto texts = std::vector<ComplexText>();
     auto file = std::fstream(fileName);
     for (auto word = std::string(); file >> word;) {
-        auto text = sf::Text();
+        auto text = ComplexText();
         auto number = std::rand() % 5;
         text.setFont(fonts[number]);
         text.setString(word);
-        text.setCharacterSize(charSize);
+        text.setSize(charSize);
         //https://stackoverflow.com/questions/7560114/random-number-c-in-some-range
         //low + ( std::rand() % ( high - low + 1 ) )
 
@@ -59,7 +61,8 @@ wordsCreator(const std::vector<sf::Font> &fonts, int lineNumber, const std::stri
         auto x = generateXPosition(texts, text, y);
 
         text.setPosition(x, y);
-        text.setFillColor(sf::Color(140, 210, 188));
+        text.setFillColorBase(sf::Color(140, 210, 188));
+        text.setFillColorTyped(sf::Color(255, 215, 0));
         texts.push_back(text);
     }
     return texts;

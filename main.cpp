@@ -5,18 +5,22 @@
 #include <vector>
 #include <set>
 #include <chrono>
+#include <memory>
 
 #include "creator.h"
 #include "colors.h"
 #include "fileProcessor.h"
 
-auto generateXPosition(const std::vector<sf::Text> &texts, const sf::Text &text, int y) -> int;
-
 auto checkMousePosition(int mouseX, int mouseY, const sf::RectangleShape &button) -> bool;
 
 auto updateBestScores(std::set<int> &bestScores, int currentScore) -> void;
 
-auto findLastWord(const std::vector<sf::Text> &texts) -> sf::Text;
+auto findLastWord(const std::vector<ComplexText> &texts) -> ComplexText;
+
+auto findFirstWordByLetter(const std::vector<ComplexText> &texts,
+                           char letter) -> ComplexText;
+
+//auto highlight(ComplexText &text) -> void;
 
 auto main() -> int {
     auto startWindow = sf::RenderWindow(
@@ -99,12 +103,12 @@ auto main() -> int {
     auto stringEntered = std::string();
     auto charSizeEntered = std::string();
     auto counter = 0.0;
-    auto speed = 128;
+    auto speed = 40.0;
     auto gameOver = false;
     auto riseSpeed = false;
     auto lowSpeed = false;
 
-    constexpr auto tickRate = 128;
+    constexpr auto tickRate = 64;
     using TickrateInterval = std::chrono::duration<double, std::ratio<1, tickRate>>;
     auto interval = TickrateInterval(1);
 
@@ -200,17 +204,17 @@ auto main() -> int {
             if (now - lastUpdate >= interval) {
 
                 if (!gameOver) {
-                    window.clear(color::backgroundColor2);
+                    //window.clear(color::backgroundColor2);
 
                     for (auto &text: texts) {
 
-                        if ((text.getLocalBounds().width + text.getPosition().x) > 800 &&
+                        if ((text.getLocalBoundsWidth() + text.getPositionX()) > 800 &&
                             text.getFillColor() != color::backgroundColor2) {
                             gameOver = true;
                         }
 
-                        if (text.getPosition().x > 600 && text.getFillColor() != color::backgroundColor2) {
-                            text.setFillColor(color::wordColorDanger);
+                        if (text.getPositionX() > 600 && text.getFillColor() != color::backgroundColor2) {
+                            text.setFillColorBase(color::wordColorDanger);
                         }
 
                         if (riseSpeed) {
@@ -227,10 +231,10 @@ auto main() -> int {
                         text.move(speed / tickRate, 0);
 
                         if (stringEntered == text.getString()) {
-                            text.setFillColor(color::backgroundColor2);
+                            text.setFillColorBase(color::backgroundColor2);
                         }
 
-                        window.draw(text);
+                        //window.draw(text);
                     }
 
                     if (findLastWord(texts).getFillColor() == color::backgroundColor2) {
@@ -240,16 +244,16 @@ auto main() -> int {
                     counter += 0.01;
                     counterText.setString(std::to_string(static_cast<int>(counter)));
 
-                    window.draw(footer);
-                    window.draw(textEntered);
-                    window.draw(labelEntering);
-                    window.draw(labelCount);
-                    window.draw(counterText);
+//                    window.draw(footer);
+//                    window.draw(textEntered);
+//                    window.draw(labelEntering);
+//                    window.draw(labelCount);
+//                    window.draw(counterText);
 
                 } else {
-                    window.clear(color::backgroundColor1);
-                    window.draw(endGameBlock);
-                    window.draw(endGameMessage);
+//                    window.clear(color::backgroundColor1);
+//                    window.draw(endGameBlock);
+//                    window.draw(endGameMessage);
                     labelCount.setPosition(330, 200);
                     counterText.setPosition(430, 200);
 
@@ -261,13 +265,34 @@ auto main() -> int {
                     }
 
                     bestScoresOptions.setString(bestScoresOptionsString);
-                    window.draw(bestScoresLabel);
-                    window.draw(bestScoresOptions);
-                    window.draw(counterText);
-                    window.draw(labelCount);
-                    window.draw(bestScoresFrame);
+//                    window.draw(bestScoresLabel);
+//                    window.draw(bestScoresOptions);
+//                    window.draw(counterText);
+//                    window.draw(labelCount);
+//                    window.draw(bestScoresFrame);
                 }
                 lastUpdate = now;
+            }
+
+            if(!gameOver){
+                window.clear(color::backgroundColor2);
+                for(auto &text:texts){
+                    window.draw(text);
+                }
+                window.draw(footer);
+                window.draw(textEntered);
+                window.draw(labelEntering);
+                window.draw(labelCount);
+                window.draw(counterText);
+            }else{
+                window.clear(color::backgroundColor1);
+                window.draw(endGameBlock);
+                window.draw(endGameMessage);
+                window.draw(bestScoresLabel);
+                window.draw(bestScoresOptions);
+                window.draw(counterText);
+                window.draw(labelCount);
+                window.draw(bestScoresFrame);
             }
             window.display();
         }
@@ -298,11 +323,27 @@ auto checkMousePosition(int mouseX, int mouseY, const sf::RectangleShape &button
     return (mouseX > buttonXLeft && mouseX < buttonXRight && mouseY > buttonYUpper && mouseY < buttonYLower);
 }
 
-auto findLastWord(const std::vector<sf::Text> &texts) -> sf::Text {
-    auto result = texts;
+auto findLastWord(const std::vector<ComplexText> &texts) -> ComplexText {
+    auto result = std::vector<ComplexText>();
+    for (auto &i: texts) {
+        result.push_back(i);
+    }
     auto projection = [](const auto &text) -> float {
-        return text.getPosition().x;
+        return text.getPositionX();
     };
     std::ranges::sort(result, {}, projection);
     return result.front();
 }
+
+auto findFirstWordByLetter(const std::vector<ComplexText> &texts,
+                           char letter) -> ComplexText {
+    for (auto &text: texts) {
+        if (text.getString()[0] == letter && text.getFillColor() != color::backgroundColor2 &&
+            text.getPositionX() > 0 && text.getPositionX() < 800 &&
+            text.getPositionY() > 0 && text.getPositionY() < 600) {
+            return text;
+        }
+    }
+    //return null;
+}
+
