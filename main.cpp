@@ -1,11 +1,9 @@
-#include <fmt/core.h>
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <algorithm>
 #include <vector>
 #include <set>
 #include <chrono>
-#include <memory>
 
 #include "creator.h"
 #include "colors.h"
@@ -16,11 +14,6 @@ auto checkMousePosition(int mouseX, int mouseY, const sf::RectangleShape &button
 auto updateBestScores(std::set<int> &bestScores, int currentScore) -> void;
 
 auto findLastWord(const std::vector<ComplexText> &texts) -> ComplexText;
-
-auto findFirstWordByLetter(const std::vector<ComplexText> &texts,
-                           char letter) -> ComplexText;
-
-//auto highlight(ComplexText &text) -> void;
 
 auto main() -> int {
     auto startWindow = sf::RenderWindow(
@@ -67,20 +60,22 @@ auto main() -> int {
                                    260, 35, sf::Color::Black);
 
     auto menuLabel = labelCreator(labelFont, 24, "Menu",
-                                  350, 160, sf::Color::Black);
+                                  350, 150, sf::Color::Black);
 
     auto menuBlock = blockCreator(600, 50, 100, 30);
 
     auto optionsLabel = labelCreator(labelFont, 20,
                                      "rise speed  -->  'arrow up'\n\n"
-                                     "low speed  -->  'arrow down'",
-                                     250, 220, sf::Color::Black);
+                                     "low speed  -->  'arrow down'\n\n"
+                                     "save game --> Ctrl + Z\n\n"
+                                     "load saved game --> Ctrl + C\n\n",
+                                     250, 210, sf::Color::Black);
 
     auto bestScoresLabel = labelCreator(labelFont, 24, "Best scores", 320, 300, sf::Color::Black);
 
     auto bestScoresOptions = labelCreator(labelFont, 20, "", 380, 350, sf::Color::Black);
 
-    auto optionsFrame = frameCreator(400, 250, 200, 140);
+    auto optionsFrame = frameCreator(400, 300, 200, 130);
 
     auto bestScoresFrame = frameCreator(200, 210, 290, 290);
 
@@ -89,13 +84,12 @@ auto main() -> int {
 
     auto button = sf::RectangleShape();
     button.setSize(sf::Vector2f(160, 40));
-    button.setPosition(300, 430);
+    button.setPosition(300, 470);
     button.setFillColor(sf::Color::Blue);
     button.setOutlineThickness(3);
     button.setOutlineColor(sf::Color::Black);
 
-    auto buttonLabel = labelCreator(labelFont, 20, "Start", 350, 440, sf::Color::White);
-
+    auto buttonLabel = labelCreator(labelFont, 20, "Start", 350, 480, sf::Color::White);
 
     auto bestScores = std::set<int>();
     readFromFile(bestScores, "bestScores.txt");
@@ -107,6 +101,8 @@ auto main() -> int {
     auto gameOver = false;
     auto riseSpeed = false;
     auto lowSpeed = false;
+    auto texts = std::vector<ComplexText>();
+    auto charSize = 25;
 
     constexpr auto tickRate = 64;
     using TickrateInterval = std::chrono::duration<double, std::ratio<1, tickRate>>;
@@ -132,8 +128,15 @@ auto main() -> int {
                 if (event.key.code == sf::Keyboard::BackSpace) {
                     charSizeEntered.erase(charSizeEntered.size() - 1);
                 }
+                if (event.key.code == sf::Keyboard::C && event.key.control) {
+                    startWindow.close();
+                    texts = savedWordsCreator(fonts, "words2.txt", "ints.txt", "positions.txt");
+                    charSize = readCharSizeFromFile("ints.txt");
+                    counter = readScoreFromFile("ints.txt");
+                }
             }
         }
+
         startWindow.clear(color::backgroundColor1);
 
         fontSizeText.setString(charSizeEntered);
@@ -153,11 +156,13 @@ auto main() -> int {
         startWindow.display();
     }
 
-    auto charSize = 25;
+
     if (!charSizeEntered.empty()) {
         charSize = std::stoi(charSizeEntered);
     }
-    auto texts = wordsCreator(fonts, lineNumber, "words.txt", charSize);
+    if (texts.empty()) {
+        texts = wordsCreator(fonts, lineNumber, "words.txt", charSize);
+    }
 
     if (!startWindow.isOpen()) {
 
@@ -179,6 +184,7 @@ auto main() -> int {
 
                 if (event.type == sf::Event::TextEntered) {
                     auto charEntered = static_cast<char>(event.text.unicode);
+
                     if (charEntered != 015 && charEntered != 010) {
                         stringEntered += charEntered;
                     }
@@ -197,6 +203,12 @@ auto main() -> int {
                     if (event.key.code == sf::Keyboard::BackSpace) {
                         stringEntered.erase(stringEntered.size() - 1);
                     }
+                    if (event.key.code == sf::Keyboard::Z && event.key.control) {
+                        saveIntsTofile(static_cast<int>(counter), charSize, "ints.txt");
+                        saveWordsToFile(texts, "words2.txt");
+                        savePositionsToFile(texts, "positions.txt");
+                        window.close();
+                    }
                 }
             }
 
@@ -204,8 +216,6 @@ auto main() -> int {
             if (now - lastUpdate >= interval) {
 
                 if (!gameOver) {
-                    //window.clear(color::backgroundColor2);
-
                     for (auto &text: texts) {
 
                         if ((text.getLocalBoundsWidth() + text.getPositionX()) > 800 &&
@@ -233,8 +243,6 @@ auto main() -> int {
                         if (stringEntered == text.getString()) {
                             text.setFillColorBase(color::backgroundColor2);
                         }
-
-                        //window.draw(text);
                     }
 
                     if (findLastWord(texts).getFillColor() == color::backgroundColor2) {
@@ -244,16 +252,7 @@ auto main() -> int {
                     counter += 0.01;
                     counterText.setString(std::to_string(static_cast<int>(counter)));
 
-//                    window.draw(footer);
-//                    window.draw(textEntered);
-//                    window.draw(labelEntering);
-//                    window.draw(labelCount);
-//                    window.draw(counterText);
-
                 } else {
-//                    window.clear(color::backgroundColor1);
-//                    window.draw(endGameBlock);
-//                    window.draw(endGameMessage);
                     labelCount.setPosition(330, 200);
                     counterText.setPosition(430, 200);
 
@@ -265,18 +264,13 @@ auto main() -> int {
                     }
 
                     bestScoresOptions.setString(bestScoresOptionsString);
-//                    window.draw(bestScoresLabel);
-//                    window.draw(bestScoresOptions);
-//                    window.draw(counterText);
-//                    window.draw(labelCount);
-//                    window.draw(bestScoresFrame);
                 }
                 lastUpdate = now;
             }
 
-            if(!gameOver){
+            if (!gameOver) {
                 window.clear(color::backgroundColor2);
-                for(auto &text:texts){
+                for (auto &text: texts) {
                     window.draw(text);
                 }
                 window.draw(footer);
@@ -284,7 +278,7 @@ auto main() -> int {
                 window.draw(labelEntering);
                 window.draw(labelCount);
                 window.draw(counterText);
-            }else{
+            } else {
                 window.clear(color::backgroundColor1);
                 window.draw(endGameBlock);
                 window.draw(endGameMessage);
@@ -297,8 +291,7 @@ auto main() -> int {
             window.display();
         }
     }
-
-    safeToFile(bestScores, "bestScores.txt");
+    saveToFile(bestScores, "bestScores.txt");
 }
 
 auto updateBestScores(std::set<int> &bestScores, int currentScore) -> void {
@@ -334,16 +327,3 @@ auto findLastWord(const std::vector<ComplexText> &texts) -> ComplexText {
     std::ranges::sort(result, {}, projection);
     return result.front();
 }
-
-auto findFirstWordByLetter(const std::vector<ComplexText> &texts,
-                           char letter) -> ComplexText {
-    for (auto &text: texts) {
-        if (text.getString()[0] == letter && text.getFillColor() != color::backgroundColor2 &&
-            text.getPositionX() > 0 && text.getPositionX() < 800 &&
-            text.getPositionY() > 0 && text.getPositionY() < 600) {
-            return text;
-        }
-    }
-    //return null;
-}
-

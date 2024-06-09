@@ -26,14 +26,14 @@ public:
 
     auto setPosition(int x, int y) -> void {
         typed.setPosition(x, y);
-        base.setPosition( typed.getLocalBounds().width+x, y);
+        base.setPosition(typed.getLocalBounds().width + x, y);
     };
 
     auto setFillColorTyped(sf::Color const &color) -> void {
         typed.setFillColor(color);
     };
 
-    auto setFillColorBase(sf::Color const& color)->void{
+    auto setFillColorBase(sf::Color const &color) -> void {
         base.setFillColor(color);
     };
 
@@ -49,12 +49,8 @@ public:
         return typed.getLocalBounds().width + base.getLocalBounds().width;
     };
 
-    auto getLocalBoundsHeight() const -> int {
-        return typed.getLocalBounds().height;
-    };
-
     auto getFillColor() const -> sf::Color {
-        return typed.getFillColor();
+        return base.getFillColor();
     };
 
     auto getString() const -> std::string {
@@ -66,8 +62,6 @@ public:
         base.move(x, y);
 
     };
-
-    auto highlight() -> void;
 
 private:
     virtual void draw(sf::RenderTarget &target, sf::RenderStates states) const;

@@ -1,7 +1,8 @@
 #include "complexText.h"
+#include "fileProcessor.h"
 #include <SFML/Graphics.hpp>
 #include <fstream>
-#include <memory>
+#include <comdef.h>
 
 auto labelCreator(const sf::Font &font, int size, const std::string &text, int x, int y,
                   const sf::Color &color) -> sf::Text {
@@ -39,6 +40,33 @@ auto generateXPosition(const std::vector<ComplexText> &texts, const ComplexText 
         x = -200 + (std::rand() % 201);
     }
     return x;
+}
+
+auto savedWordsCreator(const std::vector<sf::Font> &fonts, const std::string &fileNameWords,
+                       const std::string &fileNameCharSize,
+                       const std::string &fileNamePositions) -> std::vector<ComplexText> {
+    auto texts = std::vector<ComplexText>();
+    auto file = std::fstream(fileNameWords);
+    auto charSize = readCharSizeFromFile(fileNameCharSize);
+    auto positions = readPositionsFromFile(fileNamePositions);
+    auto i = 0;
+    for (auto word = std::string(); file >> word;) {
+        auto text = ComplexText();
+        auto number = std::rand() % 5;
+        text.setFont(fonts[number]);
+        text.setString(word);
+        text.setSize(charSize);
+
+        auto x = positions[i].first;
+        auto y = positions[i].second;
+
+        text.setPosition(x, y);
+        text.setFillColorBase(sf::Color(140, 210, 188));
+        text.setFillColorTyped(sf::Color(255, 215, 0));
+        texts.push_back(text);
+        ++i;
+    }
+    return texts;
 }
 
 auto
